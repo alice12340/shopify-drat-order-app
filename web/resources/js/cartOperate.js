@@ -24,10 +24,10 @@ axios.get('cart.js').then(function (response) {
         axios.post(domain + '/api/createDraftOrder', cart_info).then(function (re) {
           console.log(re.data);
           window.location.href = re.data;
-        })["catch"](function (e) {
+        }).catch(function (e) {
           console.log(e);
         });
-      })["catch"](function (e) {
+      }).catch(function (e) {
         console.log(e);
       });
     } else {
