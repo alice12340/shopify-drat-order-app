@@ -22,9 +22,14 @@ export default function App() {
           <QueryProvider>
             <NavigationMenu
               navigationLinks={[
+                
                 {
-                  label: t("NavigationMenu.pageName"),
-                  destination: "/pagename",
+                  label: t("NavigationMenu.options"),
+                  destination: "/options",
+                },
+                {
+                  label: 'add option',
+                  destination: "/optionAdd",
                 },
               ]}
             />

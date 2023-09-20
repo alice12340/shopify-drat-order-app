@@ -2,8 +2,13 @@
 
 use App\Exceptions\ShopifyProductCreatorException;
 use App\Lib\AuthRedirection;
+use App\Lib\DraftOrderCreate;
 use App\Lib\EnsureBilling;
+use App\Lib\OptionCreator;
+use App\Lib\OptionList;
 use App\Lib\ProductCreator;
+use App\Lib\ScriptTag;
+use App\Models\CartInfo;
 use App\Models\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -142,4 +147,60 @@ Route::post('/api/webhooks', function (Request $request) {
         Log::error("Got an exception when handling '$topic' webhook: {$e->getMessage()}");
         return response()->json(['message' => "Got an exception when handling '$topic' webhook"], 500);
     }
+});
+
+Route::get('/api/installScriptTag', function (Request $request) {
+    /** @var AuthSession */
+    $session = $request->get('shopifySession'); // Provided by the shopify.auth middleware, guaranteed to be active
+
+    try {
+        $res = ScriptTag::call($session);
+        // $res = UpdateCartDiscount::call($session);
+        return response($res->getDecodedBody());
+    } catch (\Exception $e) {
+        $success = false;
+        Log::error("Failed to create script tags: $e");
+        return response()->json(['message' => "Got an exception when create script tags"], 500);
+    }
+
+})->middleware('shopify.auth');
+
+Route::get('/api/option/list', function (Request $request) {
+    $session = $request->get('shopifySession'); // Provided by the shopify.auth middleware, guaranteed to be active
+    $re = OptionList::call($session);
+    return response()->json($re, 200);
+})->middleware('shopify.auth');
+
+/** create options */
+Route::post('/api/option/create', function (Request $request) {
+    $session = $request->get('shopifySession'); // Provided by the shopify.auth middleware, guaranteed to be active
+    try {
+        $re =  OptionCreator::call($request);
+        return response()->json(['message' =>'success'], 200);
+    }catch (\Exception $e) {
+        return response()->json(['message' => $e->getMessage()], 500);
+    }
+    
+})->middleware('shopify.auth');
+
+/** create draft order */
+Route::post('/api/createDraftOrder', function (Request $request) {
+    // $session = $request->get('shopifySession'); // Provided by the shopify.auth middleware, guaranteed to be active
+    try {
+        $re =  DraftOrderCreate::call($request);
+        return response()->json($re, 200);
+    }catch (\Exception $e) {
+        return response()->json(['message' => $e->getMessage()], 500);
+    }
+    
+});
+
+Route::post('/api/saveCartInfo', function (Request $request){
+    $re = CartInfo::add($request->post());
+    return response()->json($re, 200);
+});
+
+Route::get('/api/getCartInfo', function (Request $request){
+    $re = CartInfo::find($request->get('id'))->toArray();
+    return response()->json($re, 200);
 });
